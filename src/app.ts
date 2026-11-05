@@ -1,6 +1,6 @@
 import cors from 'cors'
 import express from 'express'
-import rateLimit from 'express-rate-limit'
+import { rateLimit } from 'express-rate-limit'
 import type { AppEnv } from './config/env.js'
 import type { LlmEvaluator } from './evaluation/groq/types.js'
 import { createMockGroqAdapter } from './evaluation/groq/mockAdapter.js'
