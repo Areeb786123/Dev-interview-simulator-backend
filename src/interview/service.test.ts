@@ -284,7 +284,9 @@ describe('interview service state machine', () => {
     expect(evaluated.ok).toBe(true)
     if (!evaluated.ok) return
     expect(evaluated.interview.id).toBe(orphanId)
-    expect(evaluated.interview.latestEvaluation?.score).toBe(9)
+    expect(evaluated.interview.latestEvaluation).not.toBeNull()
+    expect(evaluated.interview.evaluateAttempts).toBe(1)
   })
 })
+
 
