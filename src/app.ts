@@ -46,6 +46,10 @@ export function createApp(env: AppEnv, options: CreateAppOptions = {}) {
   })
 
   app.disable('x-powered-by')
+  // Vercel sits behind a proxy; required for express-rate-limit IP keys.
+  if (process.env.VERCEL) {
+    app.set('trust proxy', 1)
+  }
   app.use(cors({ origin: true }))
   app.use(express.json({ limit: '256kb' }))
 
