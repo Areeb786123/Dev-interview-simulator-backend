@@ -32,6 +32,19 @@ describe('ArchitectureSubmitSchema', () => {
     expect(parsed.success).toBe(true)
   })
 
+  it('accepts custom components with label', () => {
+    const parsed = ArchitectureSubmitSchema.safeParse({
+      ...validSubmit,
+      mapId: 'sandbox',
+      levelId: 'playground',
+      components: [
+        { id: 'n1', kind: 'custom', x: 10, y: 20, label: 'Auth Gateway' },
+      ],
+      levelContext: { reviewMode: 'ai', title: 'Custom Design Simulate' },
+    })
+    expect(parsed.success).toBe(true)
+  })
+
   it('rejects empty components', () => {
     const parsed = ArchitectureSubmitSchema.safeParse({
       ...validSubmit,

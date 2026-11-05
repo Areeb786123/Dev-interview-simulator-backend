@@ -217,9 +217,13 @@ export function createInterviewService(deps: InterviewServiceDeps) {
 
       interview.evaluateAttempts += 1
       interview.latestArchitecture = submit
-      interview.latestEvaluation = evalResult.evaluation
-      interview.pendingFollowUp = evalResult.evaluation.followUpQuestion
-      interview.status = statusFromScore(evalResult.evaluation.passed)
+      const evaluation =
+        submit.mapId === 'sandbox'
+          ? { ...evalResult.evaluation, followUpQuestion: null }
+          : evalResult.evaluation
+      interview.latestEvaluation = evaluation
+      interview.pendingFollowUp = evaluation.followUpQuestion
+      interview.status = statusFromScore(evaluation.passed)
       interview.tokenUsage = addUsage(
         interview.tokenUsage,
         usage.promptTokens,
