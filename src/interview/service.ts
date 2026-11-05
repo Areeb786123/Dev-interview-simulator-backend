@@ -68,6 +68,37 @@ export type InterviewServiceDeps = {
   limits: InterviewLimits
 }
 
+function newInterviewRecord(input: {
+  id?: string
+  clientId?: string
+  levelId: string
+  mapId: string
+}): InterviewRecord {
+  const createdAt = nowIso()
+  const record: InterviewRecord = {
+    id: input.id ?? randomUUID(),
+    clientId: input.clientId ?? randomUUID(),
+    levelId: input.levelId,
+    mapId: input.mapId,
+    status: 'IN_PROGRESS',
+    evaluateAttempts: 0,
+    answerAttempts: 0,
+    createdAt,
+    updatedAt: createdAt,
+    latestArchitecture: null,
+    latestEvaluation: null,
+    pendingFollowUp: null,
+    history: [],
+    tokenUsage: emptyTokenUsage(),
+  }
+  pushEvent(record, {
+    type: 'started',
+    summary: `Interview started for ${record.levelId}`,
+    status: 'IN_PROGRESS',
+  })
+  return record
+}
+
 export function createInterviewService(deps: InterviewServiceDeps) {
   const { store, llm, limits } = deps
 
@@ -82,27 +113,10 @@ export function createInterviewService(deps: InterviewServiceDeps) {
         }
       }
 
-      const createdAt = nowIso()
-      const record: InterviewRecord = {
-        id: randomUUID(),
-        clientId: parsed.data.clientId ?? randomUUID(),
+      const record = newInterviewRecord({
+        clientId: parsed.data.clientId,
         levelId: parsed.data.levelId,
         mapId: parsed.data.mapId,
-        status: 'IN_PROGRESS',
-        evaluateAttempts: 0,
-        answerAttempts: 0,
-        createdAt,
-        updatedAt: createdAt,
-        latestArchitecture: null,
-        latestEvaluation: null,
-        pendingFollowUp: null,
-        history: [],
-        tokenUsage: emptyTokenUsage(),
-      }
-      pushEvent(record, {
-        type: 'started',
-        summary: `Interview started for ${record.levelId}`,
-        status: 'IN_PROGRESS',
       })
       await store.create(record)
       return { ok: true as const, interview: record }
@@ -153,9 +167,20 @@ export function createInterviewService(deps: InterviewServiceDeps) {
       input: unknown,
       kind: 'evaluated' | 'revised' = 'evaluated',
     ) {
-      const interview = await store.get(id)
+      let interview = await store.get(id)
       if (!interview) {
-        return { ok: false as const, error: 'not_found' as const }
+        // Vercel serverless + in-memory store: start/evaluate often hit
+        // different instances. Recreate from the submit so evaluate can proceed.
+        const parsedSubmit = ArchitectureSubmitSchema.safeParse(input)
+        if (!parsedSubmit.success) {
+          return { ok: false as const, error: 'not_found' as const }
+        }
+        interview = newInterviewRecord({
+          id,
+          levelId: parsedSubmit.data.levelId,
+          mapId: parsedSubmit.data.mapId,
+        })
+        await store.create(interview)
       }
       if (!canEvaluateStatus(interview.status)) {
         return {

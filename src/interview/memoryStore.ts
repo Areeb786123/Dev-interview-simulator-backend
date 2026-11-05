@@ -14,9 +14,7 @@ export function createMemoryInterviewStore(): InterviewStore {
       return found ? structuredClone(found) : null
     },
     async update(record) {
-      if (!byId.has(record.id)) {
-        throw new Error(`Interview not found: ${record.id}`)
-      }
+      // Upsert: serverless recovery may create then update in one request.
       byId.set(record.id, structuredClone(record))
       return structuredClone(record)
     },

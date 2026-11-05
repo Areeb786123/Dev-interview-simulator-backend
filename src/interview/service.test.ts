@@ -260,4 +260,31 @@ describe('interview service state machine', () => {
     if (!abandoned.ok) return
     expect(abandoned.interview.status).toBe('ABANDONED')
   })
+
+  it('evaluate recreates missing interview id (serverless memory recovery)', async () => {
+    const service = createInterviewService({
+      store: createMemoryInterviewStore(),
+      llm: createMockGroqAdapter({
+        fixedResponse: {
+          score: 9,
+          summary: 'Recovered evaluate ok',
+          strengths: ['Connected'],
+          weaknesses: [],
+          followUpQuestion: null,
+          suggestedImprovements: [],
+          technologyFeedback: [],
+          finalFeedback: 'Good',
+        },
+      }),
+      limits: { maxEvaluateAttempts: 8, maxAnswerAttempts: 6 },
+    })
+
+    const orphanId = '00000000-0000-4000-8000-000000000099'
+    const evaluated = await service.evaluate(orphanId, strongArch)
+    expect(evaluated.ok).toBe(true)
+    if (!evaluated.ok) return
+    expect(evaluated.interview.id).toBe(orphanId)
+    expect(evaluated.interview.latestEvaluation?.score).toBe(9)
+  })
 })
+
