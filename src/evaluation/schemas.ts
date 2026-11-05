@@ -14,6 +14,7 @@ const ComponentKindSchema = z.enum([
   'object-store',
   'cdn',
   'websocket',
+  'custom',
 ])
 
 export const ArchitectureComponentSchema = z.object({
@@ -21,6 +22,7 @@ export const ArchitectureComponentSchema = z.object({
   kind: ComponentKindSchema,
   x: z.number(),
   y: z.number(),
+  label: z.string().min(1).optional(),
 })
 
 export const ArchitectureConnectionSchema = z.object({

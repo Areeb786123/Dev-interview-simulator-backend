@@ -122,6 +122,52 @@ describe('interview service state machine', () => {
     expect(evaluated.interview.pendingFollowUp).toBeNull()
   })
 
+  it('sandbox evaluate strips follow-up questions', async () => {
+    const service = createInterviewService({
+      store: createMemoryInterviewStore(),
+      llm: createMockGroqAdapter({
+        fixedResponse: {
+          score: 6,
+          summary: 'Needs scaling talk',
+          strengths: [],
+          weaknesses: ['Scaling'],
+          followUpQuestion: {
+            question: 'How do you handle 10x traffic?',
+            reason: 'Single server risk',
+            expectedConcepts: ['horizontal scaling'],
+          },
+          suggestedImprovements: [],
+          technologyFeedback: [],
+          finalFeedback: null,
+        },
+      }),
+      limits: { maxEvaluateAttempts: 8, maxAnswerAttempts: 6 },
+    })
+
+    const started = await service.start({
+      levelId: 'playground',
+      mapId: 'sandbox',
+    })
+    if (!started.ok) throw new Error('start failed')
+
+    const evaluated = await service.evaluate(started.interview.id, {
+      ...thinArch,
+      levelId: 'playground',
+      mapId: 'sandbox',
+      components: [
+        { id: 'n1', kind: 'custom', x: 10, y: 20, label: 'Auth Gateway' },
+      ],
+      levelContext: { reviewMode: 'ai', title: 'Custom Design Simulate' },
+    })
+
+    expect(evaluated.ok).toBe(true)
+    if (!evaluated.ok) return
+    expect(evaluated.interview.pendingFollowUp).toBeNull()
+    expect(
+      evaluated.interview.latestEvaluation?.followUpQuestion,
+    ).toBeNull()
+  })
+
   it('answer with expected concepts can transition to PASSED', async () => {
     const service = createInterviewService({
       store: createMemoryInterviewStore(),
