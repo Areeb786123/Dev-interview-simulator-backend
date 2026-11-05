@@ -50,8 +50,15 @@ export function loadEnv(
   const databaseConfigured =
     typeof data.DATABASE_URL === 'string' && data.DATABASE_URL.length > 0
 
+  // Common Vercel typo: "penai/..." instead of "openai/..."
+  const GROQ_MODEL =
+    data.GROQ_MODEL === 'penai/gpt-oss-20b'
+      ? 'openai/gpt-oss-20b'
+      : data.GROQ_MODEL
+
   return {
     ...data,
+    GROQ_MODEL,
     groqConfigured,
     databaseConfigured,
   }
