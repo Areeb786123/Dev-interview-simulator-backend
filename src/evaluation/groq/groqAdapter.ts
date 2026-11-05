@@ -1,4 +1,4 @@
-import Groq from 'groq-sdk'
+import { Groq } from 'groq-sdk'
 import type { LlmEvaluation } from '../schemas.js'
 import { parseLlmEvaluation } from '../schemas.js'
 import type {

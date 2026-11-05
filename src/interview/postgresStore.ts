@@ -1,13 +1,11 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import pg from 'pg'
+import { Pool, type QueryResultRow } from 'pg'
 import type { InterviewStore } from './store.js'
 import type { InterviewRecord } from './types.js'
 
-const { Pool } = pg
-
-function rowToRecord(row: pg.QueryResultRow): InterviewRecord {
+function rowToRecord(row: QueryResultRow): InterviewRecord {
   return {
     id: row.id,
     clientId: row.client_id,
@@ -31,7 +29,7 @@ function rowToRecord(row: pg.QueryResultRow): InterviewRecord {
   }
 }
 
-export async function migratePostgres(pool: pg.Pool): Promise<void> {
+export async function migratePostgres(pool: Pool): Promise<void> {
   const here = path.dirname(fileURLToPath(import.meta.url))
   const dir = path.resolve(here, '../../migrations')
   for (const file of [
@@ -43,7 +41,7 @@ export async function migratePostgres(pool: pg.Pool): Promise<void> {
   }
 }
 
-export function createPostgresInterviewStore(pool: pg.Pool): InterviewStore {
+export function createPostgresInterviewStore(pool: Pool): InterviewStore {
   return {
     async create(record) {
       await pool.query(
@@ -132,7 +130,7 @@ export function createPostgresInterviewStore(pool: pg.Pool): InterviewStore {
 
 export async function createPostgresPool(
   databaseUrl: string,
-): Promise<pg.Pool> {
+): Promise<Pool> {
   const pool = new Pool({ connectionString: databaseUrl })
   await migratePostgres(pool)
   return pool
